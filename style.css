@@ -781,6 +781,61 @@ body {
 .comp-mb-total .pct-ok { color: var(--green); }
 .comp-mb-total .pct-bad { color: var(--red); }
 
+/* ---- Ore Source Sections ---- */
+.ore-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.7rem;
+  margin-top: 0.6rem;
+  font-family: var(--font);
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.ore-toggle::before {
+  content: "\25B6";
+  font-size: 0.55rem;
+  transition: transform 0.2s;
+}
+.ore-toggle.open::before { transform: rotate(90deg); }
+.ore-toggle:hover { color: var(--accent); border-color: var(--accent); }
+.ore-sections { margin-top: 0.5rem; }
+.ore-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.6rem;
+  margin-bottom: 0.4rem;
+}
+.ore-section:last-child { margin-bottom: 0; }
+.ore-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.35rem;
+}
+.ore-section-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.ore-section-pct {
+  font-size: 0.65rem;
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-glow);
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+}
+
 /* ---- Alloy Score ---- */
 .alloy-score-row {
   display: flex;

@@ -39,23 +39,101 @@ const ALL_METALS = (() => {
 })();
 
 // ============================================================
+//  ORE DATA — ore minerals that smelt into alloy metals
+// ============================================================
+
+function calcAmountOfMetal(base, pct) {
+  const value = base * pct / 100;
+  return value % 2 === 0 ? value : Math.round(value) - 1;
+}
+
+function calcAmountOfMetalProcessed(base, pct) {
+  const ppItem = pct / Math.ceil(pct / 100);
+  const value = base * (ppItem / 100);
+  return value % 2 === 0 ? value : Math.round(value) - 1;
+}
+
+const ORE_ITEM_TYPES = [
+  { id: "small_ore",   label: "Small Ore",   baseMb: 16,  fn: "flat" },
+  { id: "poor_raw",    label: "Poor Raw",    baseMb: 24,  fn: "metal" },
+  { id: "normal_raw",  label: "Normal Raw",  baseMb: 36,  fn: "metal" },
+  { id: "rich_raw",    label: "Rich Raw",    baseMb: 48,  fn: "metal" },
+  { id: "crushed",     label: "Crushed",     baseMb: 80,  fn: "processed" },
+  { id: "washed",      label: "Washed",      baseMb: 100, fn: "processed" },
+  { id: "centrifuged", label: "Centrifuged", baseMb: 110, fn: "processed" },
+  { id: "ore_dust",    label: "Dust",        baseMb: 144, fn: "processed" },
+];
+
+const ORE_SOURCES = {
+  "Copper": [
+    { id: "malachite",    name: "Malachite",      pct: 90,  smallOre: true },
+    { id: "tetrahedrite", name: "Tetrahedrite",    pct: 90,  smallOre: true },
+    { id: "chalcopyrite", name: "Chalcopyrite",    pct: 85,  smallOre: false },
+    { id: "chalcocite",   name: "Chalcocite",      pct: 95,  smallOre: false },
+    { id: "bornite",      name: "Bornite",         pct: 90,  smallOre: false },
+  ],
+  "Tin": [
+    { id: "cassiterite",      name: "Cassiterite",      pct: 100, smallOre: true },
+    { id: "cassiterite_sand", name: "Cassiterite Sand", pct: 85,  smallOre: false },
+  ],
+  "Zinc": [
+    { id: "sphalerite", name: "Sphalerite", pct: 90, smallOre: true },
+  ],
+  "Nickel": [
+    { id: "garnierite",  name: "Garnierite",  pct: 100, smallOre: true },
+    { id: "pentlandite", name: "Pentlandite", pct: 85,  smallOre: false },
+  ],
+  "Lead": [
+    { id: "galena", name: "Galena", pct: 85, smallOre: false },
+  ],
+  "Cobalt": [
+    { id: "cobaltite", name: "Cobaltite", pct: 85, smallOre: false },
+  ],
+  "Aluminium Silicate": [
+    { id: "kyanite",   name: "Kyanite",   pct: 95, smallOre: false },
+    { id: "mica",      name: "Mica",      pct: 90, smallOre: false },
+    { id: "spodumene", name: "Spodumene", pct: 85, smallOre: false },
+    { id: "pollucite", name: "Pollucite", pct: 85, smallOre: false },
+  ],
+};
+
+function getOreItemMb(tmpl, pct) {
+  if (tmpl.fn === "flat") return tmpl.baseMb;
+  if (tmpl.fn === "metal") return calcAmountOfMetal(tmpl.baseMb, pct);
+  return calcAmountOfMetalProcessed(tmpl.baseMb, pct);
+}
+
+function getItemsForMetal(metalName) {
+  const items = MELTABLE_ITEMS.map(it => ({ ...it }));
+  const ores = ORE_SOURCES[metalName];
+  if (ores) {
+    for (const ore of ores) {
+      for (const tmpl of ORE_ITEM_TYPES) {
+        if (tmpl.id === "small_ore" && !ore.smallOre) continue;
+        const mb = getOreItemMb(tmpl, ore.pct);
+        if (mb <= 0) continue;
+        items.push({
+          id: `${ore.id}__${tmpl.id}`,
+          label: `${ore.name} ${tmpl.label}`,
+          mb,
+          max: 64,
+          oreId: ore.id,
+        });
+      }
+    }
+  }
+  return items;
+}
+
+// ============================================================
 //  SOLVER ENGINE
 // ============================================================
 
-let _globalDP = null;
-let _globalDPSize = 0;
-
-function getGlobalDP(maxMb) {
-  if (_globalDP && _globalDPSize >= maxMb) return _globalDP;
-  _globalDP = buildDP(maxMb, null);
-  _globalDPSize = maxMb;
-  return _globalDP;
-}
-
-function buildDP(maxMb, limits) {
+function buildDP(maxMb, limits, items) {
+  items = items || MELTABLE_ITEMS;
   const dp = new Uint8Array(maxMb + 1);
   dp[0] = 1;
-  for (const item of MELTABLE_ITEMS) {
+  for (const item of items) {
     const maxQty = limits ? (limits[item.id] || 0) : item.max;
     for (let c = 0; c < maxQty; c++) {
       for (let v = maxMb; v >= item.mb; v--) {
@@ -66,20 +144,20 @@ function buildDP(maxMb, limits) {
   return dp;
 }
 
-function getItemOrder(optimize) {
-  const items = [...MELTABLE_ITEMS];
+function getItemOrder(items, optimize) {
+  const sorted = [...items];
   if (!optimize || optimize.direction === "none" || optimize.type !== "item") {
-    return items.sort((a, b) => b.mb - a.mb);
+    return sorted.sort((a, b) => b.mb - a.mb);
   }
   const tid = optimize.target;
   if (optimize.direction === "maximize") {
-    return items.sort((a, b) => {
+    return sorted.sort((a, b) => {
       if (a.id === tid && b.id !== tid) return -1;
       if (b.id === tid && a.id !== tid) return 1;
       return b.mb - a.mb;
     });
   }
-  return items.sort((a, b) => {
+  return sorted.sort((a, b) => {
     if (a.id === tid && b.id !== tid) return 1;
     if (b.id === tid && a.id !== tid) return -1;
     return b.mb - a.mb;
@@ -112,7 +190,7 @@ function fillWithItems(target, itemOrder, limits) {
   function solve(r, idx) {
     if (r === 0) return [];
     if (r < 0 || idx >= available.length) return null;
-    const key = r * 10 + idx;
+    const key = r * available.length + idx;
     if (memo.has(key)) return memo.get(key);
     const item = available[idx];
     const mq = limits ? (limits[item.id] || 0) : item.max;
@@ -189,7 +267,7 @@ function _backtrack(ranges, dps, idx, remaining, amounts, optimize, totalMb) {
   return false;
 }
 
-function allocate(components, totalMb, dps, itemOrder, optimize, limitsArr) {
+function allocate(components, totalMb, dps, itemOrders, optimize, limitsArr) {
   const ranges = components.map((c, i) => ({
     metal: c.metal, min: c.min, max: c.max,
     loMb: Math.ceil(totalMb * c.min),
@@ -202,7 +280,8 @@ function allocate(components, totalMb, dps, itemOrder, optimize, limitsArr) {
   const allocs = [];
   for (let i = 0; i < components.length; i++) {
     const lim = limitsArr ? limitsArr[i] : null;
-    const items = fillWithItems(amounts[i], itemOrder, lim);
+    const order = Array.isArray(itemOrders[0]) ? itemOrders[i] : itemOrders;
+    const items = fillWithItems(amounts[i], order, lim);
     if (!items) return null;
     allocs.push({ metal: components[i].metal, min: components[i].min, max: components[i].max, mb: amounts[i], items });
   }
@@ -216,9 +295,9 @@ function allocate(components, totalMb, dps, itemOrder, optimize, limitsArr) {
 function solvePerfect(components, desiredIngots, optimize) {
   const desiredMb = desiredIngots * MB_PER_INGOT;
   const maxSearch = desiredMb + MB_PER_INGOT * 6;
-  const dp = getGlobalDP(maxSearch);
-  const dps = components.map(() => dp);
-  const itemOrder = getItemOrder(optimize);
+  const compItems = components.map(c => getItemsForMetal(c.metal));
+  const dps = compItems.map(items => buildDP(maxSearch, null, items));
+  const itemOrders = compItems.map(items => getItemOrder(items, optimize));
 
   let bestResult = null;
   let bestWaste = Infinity;
@@ -229,7 +308,7 @@ function solvePerfect(components, desiredIngots, optimize) {
     const waste = totalMb % MB_PER_INGOT;
     if (waste >= bestWaste) continue;
 
-    const allocs = allocate(components, totalMb, dps, itemOrder, optimize, null);
+    const allocs = allocate(components, totalMb, dps, itemOrders, optimize, null);
     if (!allocs) continue;
 
     bestWaste = waste;
@@ -242,11 +321,12 @@ function solvePerfect(components, desiredIngots, optimize) {
 
 function solvePerfectPure(desiredIngots, optimize) {
   const target = desiredIngots * MB_PER_INGOT;
-  const itemOrder = getItemOrder(optimize);
-  const items = fillWithItems(target, itemOrder, null);
-  if (!items) return null;
+  const items = getItemsForMetal(selectedPureMetal);
+  const itemOrder = getItemOrder(items, optimize);
+  const filled = fillWithItems(target, itemOrder, null);
+  if (!filled) return null;
   const result = { totalMb: target, outputIngots: desiredIngots, waste: 0,
-    allocations: [{ metal: null, min: 1, max: 1, mb: target, items }] };
+    allocations: [{ metal: null, min: 1, max: 1, mb: target, items: filled }] };
   result.score = scoreResultPure(result, desiredIngots);
   return result;
 }
@@ -256,18 +336,19 @@ function solvePerfectPure(desiredIngots, optimize) {
 // ============================================================
 
 function solveAvailable(components, desiredIngots, inventories, optimize) {
-  const itemOrder = getItemOrder(optimize);
+  const compItems = components.map(c => getItemsForMetal(c.metal));
+  const itemOrders = compItems.map(items => getItemOrder(items, optimize));
 
-  const compMax = inventories.map(inv =>
+  const compMax = inventories.map((inv, i) =>
     Object.entries(inv).reduce((s, [id, qty]) => {
-      const it = MELTABLE_ITEMS.find(m => m.id === id);
+      const it = compItems[i].find(m => m.id === id);
       return s + (it ? it.mb * qty : 0);
     }, 0)
   );
   const maxTotal = compMax.reduce((a, b) => a + b, 0);
   if (maxTotal < 16) return null;
 
-  const dps = inventories.map((inv, i) => buildDP(compMax[i], inv));
+  const dps = inventories.map((inv, i) => buildDP(compMax[i], inv, compItems[i]));
   const goalMb = Math.min(desiredIngots * MB_PER_INGOT, maxTotal);
   const searchRadius = MB_PER_INGOT * 6;
 
@@ -279,7 +360,7 @@ function solveAvailable(components, desiredIngots, inventories, optimize) {
     for (const t of trials) {
       if (t < 16 || t > maxTotal) continue;
 
-      const allocs = allocate(components, t, dps, itemOrder, optimize, inventories);
+      const allocs = allocate(components, t, dps, itemOrders, optimize, inventories);
       if (!allocs) continue;
 
       const waste = t % MB_PER_INGOT;
@@ -297,14 +378,15 @@ function solveAvailable(components, desiredIngots, inventories, optimize) {
 }
 
 function solveAvailablePure(desiredIngots, inventory, optimize) {
-  const itemOrder = getItemOrder(optimize);
+  const items = getItemsForMetal(selectedPureMetal);
+  const itemOrder = getItemOrder(items, optimize);
   const maxMb = Object.entries(inventory).reduce((s, [id, qty]) => {
-    const it = MELTABLE_ITEMS.find(m => m.id === id);
+    const it = items.find(m => m.id === id);
     return s + (it ? it.mb * qty : 0);
   }, 0);
   if (maxMb < 16) return null;
 
-  const dp = buildDP(maxMb, inventory);
+  const dp = buildDP(maxMb, inventory, items);
   const goalMb = Math.min(desiredIngots * MB_PER_INGOT, maxMb);
 
   let bestResult = null;
@@ -314,12 +396,12 @@ function solveAvailablePure(desiredIngots, inventory, optimize) {
     const trials = delta === 0 ? [goalMb] : [goalMb + delta, goalMb - delta];
     for (const t of trials) {
       if (t < 16 || t > maxMb || !dp[t]) continue;
-      const items = fillWithItems(t, itemOrder, inventory);
-      if (!items) continue;
+      const filled = fillWithItems(t, itemOrder, inventory);
+      if (!filled) continue;
 
       const waste = t % MB_PER_INGOT;
       const result = { totalMb: t, outputIngots: Math.floor(t / MB_PER_INGOT), waste,
-        allocations: [{ metal: null, min: 1, max: 1, mb: t, items }] };
+        allocations: [{ metal: null, min: 1, max: 1, mb: t, items: filled }] };
       result.score = scoreResultPure(result, desiredIngots);
 
       if (result.score.total > bestScore) {
@@ -509,30 +591,68 @@ function buildCompCard(metalName, minPct, maxPct, isPure) {
   header.appendChild(range);
   card.appendChild(header);
 
-  const items = document.createElement("div");
-  items.className = "comp-items";
+  const itemsGrid = document.createElement("div");
+  itemsGrid.className = "comp-items";
   for (const item of MELTABLE_ITEMS) {
-    const el = document.createElement("div");
-    el.className = "comp-item";
-    el.innerHTML = `
-      <span class="comp-item-label">${item.label}</span>
-      <span class="comp-item-mb">${item.mb}mb</span>
-      <input type="number" min="0" max="${item.max}" value="0"
-             data-metal="${metalName}" data-item="${item.id}" data-mb="${item.mb}">
-    `;
-    items.appendChild(el);
+    itemsGrid.appendChild(buildItemInput(metalName, item.id, item.label, item.mb, item.max));
   }
-  card.appendChild(items);
+  card.appendChild(itemsGrid);
+
+  const ores = ORE_SOURCES[metalName];
+  if (ores && ores.length > 0) {
+    const toggle = document.createElement("button");
+    toggle.className = "ore-toggle";
+    toggle.textContent = `Ore Sources (${ores.length})`;
+    toggle.type = "button";
+    const oreContainer = document.createElement("div");
+    oreContainer.className = "ore-sections hidden";
+
+    toggle.addEventListener("click", () => {
+      oreContainer.classList.toggle("hidden");
+      toggle.classList.toggle("open");
+    });
+    card.appendChild(toggle);
+
+    for (const ore of ores) {
+      const sec = document.createElement("div");
+      sec.className = "ore-section";
+      sec.innerHTML = `<div class="ore-section-header"><span class="ore-section-name">${ore.name}</span><span class="ore-section-pct">${ore.pct}%</span></div>`;
+      const oreGrid = document.createElement("div");
+      oreGrid.className = "comp-items";
+      for (const tmpl of ORE_ITEM_TYPES) {
+        if (tmpl.id === "small_ore" && !ore.smallOre) continue;
+        const mb = getOreItemMb(tmpl, ore.pct);
+        if (mb <= 0) continue;
+        const itemId = `${ore.id}__${tmpl.id}`;
+        oreGrid.appendChild(buildItemInput(metalName, itemId, tmpl.label, mb, 64));
+      }
+      sec.appendChild(oreGrid);
+      oreContainer.appendChild(sec);
+    }
+    card.appendChild(oreContainer);
+  }
 
   const totalLine = document.createElement("div");
   totalLine.className = "comp-mb-total";
   totalLine.innerHTML = `<span class="mb-num">0</span> mB`;
   card.appendChild(totalLine);
 
-  items.querySelectorAll("input").forEach(inp => {
+  card.querySelectorAll("input[type='number']").forEach(inp => {
     inp.addEventListener("input", () => updateCompTotal(card));
   });
   return card;
+}
+
+function buildItemInput(metalName, itemId, label, mb, max) {
+  const el = document.createElement("div");
+  el.className = "comp-item";
+  el.innerHTML = `
+    <span class="comp-item-label">${label}</span>
+    <span class="comp-item-mb">${mb}mb</span>
+    <input type="number" min="0" max="${max}" value="0"
+           data-metal="${metalName}" data-item="${itemId}" data-mb="${mb}">
+  `;
+  return el;
 }
 
 function updateCompTotal(card) {
@@ -601,10 +721,18 @@ function fillComponentInputs(result) {
   for (let i = 0; i < result.allocations.length && i < cards.length; i++) {
     const alloc = result.allocations[i];
     const card = cards[i];
+    let hasOreValues = false;
     card.querySelectorAll("input[type='number']").forEach(inp => {
       const match = alloc.items.find(it => it.id === inp.dataset.item);
       inp.value = match ? match.qty : 0;
+      if (match && match.qty > 0 && inp.dataset.item.includes("__")) hasOreValues = true;
     });
+    if (hasOreValues) {
+      const oreSec = card.querySelector(".ore-sections");
+      const toggle = card.querySelector(".ore-toggle");
+      if (oreSec) oreSec.classList.remove("hidden");
+      if (toggle) toggle.classList.add("open");
+    }
     updateCompTotal(card);
     card.classList.remove("valid", "invalid");
     const pct = result.totalMb > 0 ? alloc.mb / result.totalMb : 0;

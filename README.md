@@ -22,7 +22,8 @@ Calculate the exact item quantities needed to produce any of the 14 TFG alloys, 
   - **Use Available** — enter the materials you have on hand and the solver finds the best combination, scored by quality
 - **Optimization** — optionally minimize or maximize the use of a specific material or item type (e.g., "Minimize Copper" or "Maximize Dust")
 - **Scoring system** — every result is scored 0–100 across three axes: Validity (percentage fit), Efficiency (waste), and Yield (output vs. target)
-- **5 meltable item types** — Ingot (144 mB), Dust (144 mB), Small Dust (36 mB), Tiny Dust (16 mB), Nugget (16 mB)
+- **5 base item types** — Ingot (144 mB), Dust (144 mB), Small Dust (36 mB), Tiny Dust (16 mB), Nugget (16 mB)
+- **Ore source support** — per-metal ore minerals (Malachite, Tetrahedrite, Cassiterite, Sphalerite, etc.) with percentage-adjusted mB yields derived from TFG's `calcAmountOfMetal` / `calcAmountOfMetalProcessed` formulas. 8 ore item types per source: Small Ore, Poor/Normal/Rich Raw, Crushed, Washed, Centrifuged, Ore Dust
 - **Pure Metal mode** — calculates optimal item breakdown for non-alloy metals
 
 ## Usage
