@@ -114,9 +114,15 @@
     <div class="alloy-page">
       <div class="alloy-container">
         <div class="alloy-top-bar">
-          <div class="alloy-mode-toggle" id="alloy-mode-toggle">
-            <button class="mode-btn active" data-mode="alloy">Alloy</button>
-            <button class="mode-btn" data-mode="pure">Pure Metal</button>
+          <div class="alloy-controls-row">
+            <div class="alloy-mode-toggle" id="alloy-mode-toggle">
+              <button class="mode-btn active" data-mode="alloy">Alloy</button>
+              <button class="mode-btn" data-mode="pure">Pure Metal</button>
+            </div>
+            <div class="alloy-calc-toggle" id="alloy-calc-toggle">
+              <button class="mode-btn active" data-calc="perfect">Perfect Recipe</button>
+              <button class="mode-btn" data-calc="available">Use Available</button>
+            </div>
           </div>
           <div class="alloy-target-row">
             <select id="alloy-target" class="alloy-select"></select>
@@ -126,11 +132,30 @@
             </label>
             <button id="alloy-calc-btn" class="btn btn-primary">Calculate</button>
           </div>
+          <div class="alloy-optimize-row">
+            <select id="opt-direction" class="alloy-opt-select">
+              <option value="none">No Optimization</option>
+              <option value="minimize">Minimize</option>
+              <option value="maximize">Maximize</option>
+            </select>
+            <select id="opt-type" class="alloy-opt-select hidden">
+              <option value="material">Material</option>
+              <option value="item">Item Type</option>
+            </select>
+            <select id="opt-target" class="alloy-opt-select hidden"></select>
+          </div>
         </div>
 
         <div class="alloy-body">
+          <div class="alloy-comp-header" id="alloy-comp-header">Recipe (auto-calculated)</div>
           <div class="alloy-components" id="alloy-components"></div>
           <div class="alloy-results hidden" id="alloy-results">
+            <div class="alloy-score-row hidden" id="alloy-score-row">
+              <div class="alloy-score-circle" id="alloy-score-circle">
+                <span class="score-value" id="score-value">0</span>
+              </div>
+              <div class="alloy-score-breakdown" id="alloy-score-breakdown"></div>
+            </div>
             <h3 class="alloy-results-title">Result</h3>
             <div class="alloy-summary" id="alloy-summary"></div>
             <div class="alloy-breakdown" id="alloy-breakdown"></div>

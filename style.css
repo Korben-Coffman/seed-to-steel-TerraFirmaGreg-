@@ -598,13 +598,18 @@ body {
   margin-bottom: 1.2rem;
   box-shadow: var(--shadow);
 }
-.alloy-mode-toggle {
+.alloy-controls-row {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.alloy-mode-toggle, .alloy-calc-toggle {
   display: inline-flex;
   background: var(--bg-input);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
-  margin-bottom: 1rem;
 }
 .mode-btn {
   background: none;
@@ -663,6 +668,36 @@ body {
   transition: border-color 0.2s;
 }
 .alloy-ingot-input:focus { border-color: var(--border-focus); }
+
+/* ---- Alloy Optimization ---- */
+.alloy-optimize-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+  flex-wrap: wrap;
+}
+.alloy-opt-select {
+  padding: 0.4rem 0.6rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: 0.78rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.alloy-opt-select:focus { border-color: var(--border-focus); }
+
+/* ---- Alloy Component Header ---- */
+.alloy-comp-header {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
 
 /* ---- Alloy Components ---- */
 .alloy-components {
@@ -745,6 +780,58 @@ body {
 .comp-mb-total .mb-num { color: var(--accent); font-weight: 600; }
 .comp-mb-total .pct-ok { color: var(--green); }
 .comp-mb-total .pct-bad { color: var(--red); }
+
+/* ---- Alloy Score ---- */
+.alloy-score-row {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  margin-bottom: 1.2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.alloy-score-circle {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid var(--text-dim);
+  flex-shrink: 0;
+  background: var(--bg-card);
+}
+.alloy-score-circle.score-high { border-color: var(--green); }
+.alloy-score-circle.score-mid  { border-color: var(--accent); }
+.alloy-score-circle.score-low  { border-color: var(--red); }
+.score-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  font-family: var(--mono);
+}
+.score-high .score-value { color: var(--green); }
+.score-mid  .score-value { color: var(--accent); }
+.score-low  .score-value { color: var(--red); }
+.alloy-score-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.score-sub {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.72rem;
+}
+.score-sub-label {
+  color: var(--text-muted);
+  min-width: 65px;
+}
+.score-sub-val {
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--text);
+}
 
 /* ---- Alloy Results ---- */
 .alloy-results {
