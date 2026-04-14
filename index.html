@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seed to Steel — TFG Calculator Suite</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="header-top">
+        <h1 class="logo"><span class="logo-icon">&#x2692;</span> Seed to Steel</h1>
+        <p class="subtitle">TerraFirmaGreg Calculator Suite</p>
+      </div>
+      <nav class="tab-bar" id="tab-bar">
+        <button class="tab-btn active" data-tab="anvil">Anvil Calculator</button>
+        <button class="tab-btn" data-tab="alloy">Alloy Calculator</button>
+        <div class="tab-indicator" id="tab-indicator"></div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- =============== ANVIL TAB =============== -->
+  <div id="tab-anvil" class="tab-content">
+    <section class="seed-bar">
+      <div class="seed-bar-inner">
+        <label for="seed-input" class="seed-label">World Seed</label>
+        <div class="seed-input-group">
+          <input type="text" id="seed-input" placeholder="Enter world seed (number or text)" autocomplete="off" spellcheck="false">
+          <button id="seed-apply" class="btn btn-primary">Apply</button>
+        </div>
+        <p class="seed-hint" id="seed-status">No seed entered — targets will not be computed.</p>
+      </div>
+    </section>
+
+    <main class="main-content">
+      <aside class="pinned-panel hidden" id="pinned-panel">
+        <div class="pinned-header">
+          <h2>Pinned</h2>
+          <span class="recipe-count" id="pinned-count">0</span>
+        </div>
+        <div class="pinned-list" id="pinned-list"></div>
+      </aside>
+
+      <aside class="recipe-panel">
+        <div class="panel-header">
+          <h2>Recipes</h2>
+          <span class="recipe-count" id="recipe-count">0</span>
+        </div>
+        <div class="search-group">
+          <input type="text" id="recipe-search" placeholder="Search recipes..." autocomplete="off" spellcheck="false">
+        </div>
+        <div class="filter-row">
+          <select id="filter-material"><option value="">All Materials</option></select>
+          <select id="filter-category"><option value="">All Types</option></select>
+          <select id="filter-tier">
+            <option value="">All Tiers</option>
+            <option value="1">Tier 1</option><option value="2">Tier 2</option><option value="3">Tier 3</option>
+            <option value="4">Tier 4</option><option value="5">Tier 5</option><option value="6">Tier 6</option>
+          </select>
+          <select id="filter-input"><option value="">All Inputs</option></select>
+        </div>
+        <ul class="recipe-list" id="recipe-list"></ul>
+      </aside>
+
+      <section class="detail-panel" id="detail-panel">
+        <div class="detail-empty" id="detail-empty">
+          <div class="empty-icon">&#x1F528;</div>
+          <p>Select a recipe to view the forging blueprint.</p>
+        </div>
+        <div class="detail-content hidden" id="detail-content">
+          <div class="detail-title-row">
+            <h2 class="detail-title" id="detail-title"></h2>
+            <button class="btn-pin" id="detail-pin" title="Pin recipe">&#x2606;</button>
+          </div>
+          <div class="detail-meta">
+            <span class="meta-badge tier-badge" id="detail-tier"></span>
+            <span class="meta-badge input-badge" id="detail-input"></span>
+            <span class="meta-badge bonus-badge hidden" id="detail-bonus">Forging Bonus</span>
+            <span class="meta-badge id-badge" id="detail-id"></span>
+          </div>
+          <div class="detail-section">
+            <h3>Required Rules</h3>
+            <div class="rules-display" id="detail-rules"></div>
+          </div>
+          <div class="detail-section target-section">
+            <h3>Target Value</h3>
+            <div class="target-display" id="detail-target">
+              <span class="target-no-seed">Enter a world seed above to compute target.</span>
+            </div>
+            <div class="anvil-bar-container hidden" id="anvil-bar-container">
+              <div class="anvil-bar">
+                <div class="anvil-bar-fill" id="anvil-bar-fill"></div>
+                <div class="anvil-bar-marker" id="anvil-bar-marker"></div>
+              </div>
+              <div class="anvil-bar-labels"><span>0</span><span>50</span><span>100</span><span>150</span></div>
+            </div>
+          </div>
+          <div class="detail-section solution-section hidden" id="solution-section">
+            <h3>Optimal Sequence <span class="step-count" id="step-count"></span></h3>
+            <div class="solution-steps" id="solution-steps"></div>
+            <div class="solution-path" id="solution-path"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- =============== ALLOY TAB =============== -->
+  <div id="tab-alloy" class="tab-content hidden">
+    <div class="alloy-page">
+      <div class="alloy-container">
+        <div class="alloy-top-bar">
+          <div class="alloy-mode-toggle" id="alloy-mode-toggle">
+            <button class="mode-btn active" data-mode="alloy">Alloy</button>
+            <button class="mode-btn" data-mode="pure">Pure Metal</button>
+          </div>
+          <div class="alloy-target-row">
+            <select id="alloy-target" class="alloy-select"></select>
+            <label class="alloy-ingot-label">
+              <input type="number" id="alloy-ingots" class="alloy-ingot-input" value="1" min="1" max="64">
+              <span>ingots</span>
+            </label>
+            <button id="alloy-calc-btn" class="btn btn-primary">Calculate</button>
+          </div>
+        </div>
+
+        <div class="alloy-body">
+          <div class="alloy-components" id="alloy-components"></div>
+          <div class="alloy-results hidden" id="alloy-results">
+            <h3 class="alloy-results-title">Result</h3>
+            <div class="alloy-summary" id="alloy-summary"></div>
+            <div class="alloy-breakdown" id="alloy-breakdown"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="app-footer">
+    <p>Built for <strong>TerraFirmaGreg Modern</strong> (TFC 1.20.1-3.2.19). Data extracted from KubeJS + TFC source.</p>
+  </footer>
+
+  <script src="app.js"></script>
+  <script src="alloy.js"></script>
+</body>
+</html>
