@@ -25,6 +25,7 @@ Calculate the exact item quantities needed to produce any of the 14 TFG alloys, 
 - **5 base item types** — Ingot (144 mB), Dust (144 mB), Small Dust (36 mB), Tiny Dust (16 mB), Nugget (16 mB)
 - **Ore source support** — per-metal ore minerals (Malachite, Tetrahedrite, Cassiterite, Sphalerite, etc.) with percentage-adjusted mB yields derived from TFG's `calcAmountOfMetal` / `calcAmountOfMetalProcessed` formulas. 8 ore item types per source: Small Ore, Poor/Normal/Rich Raw, Crushed, Washed, Centrifuged, Ore Dust
 - **Pure Metal mode** — calculates optimal item breakdown for non-alloy metals
+- **Bloomery calculator** — computes the maximum Raw Iron Blooms per bloomery run (1–3 layers / 16–48 capacity). Reference table shows optimal ore-to-charcoal ratios for every iron ore item type (Dust, Crushed, Washed, Raw, etc.) at 90% purity. "Use Available" mode lets you enter your current inventory and see the exact bloom output
 
 ## Usage
 

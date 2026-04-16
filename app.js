@@ -299,6 +299,8 @@ const TEMPLATES = [
   { suffix:"_scythe_blade",        label:"Scythe Blade",         cat:"Tools",      rules:["punch_last","bend_not_last","draw_not_last"],        bonus:true, req:"anyTool", input:"Ingot" },
   { suffix:"_file_head",           label:"File Head",            cat:"Tools",      rules:["upset_last","bend_not_last","punch_not_last"],       bonus:true, req:"anyTool", input:"Ingot" },
   { suffix:"_knife_blade",         label:"Knife Blade",          cat:"Tools",      rules:["punch_last","bend_not_last","draw_not_last"],        bonus:true, req:"anyTool", input:"Ingot" },
+  // RNR mattock head (requires TFC tool flag)
+  { suffix:null, idFn:m=>`rnr:anvil/${m.id}_mattock_head`,       label:"Mattock Head",         cat:"Tools",      rules:["punch_last","punch_not_last","bend_not_last"],      bonus:true, req:"tool",    input:"Ingot" },
   // GT tool tips (requires tool OR gtTool, different namespace)
   { suffix:null, idFn:m=>`gtceu:anvil/${m.id}_screwdriver_tip`, label:"Screwdriver Tip", cat:"GT Tools", rules:["draw_last","hit_second_last","hit_third_last"], bonus:false, req:"anyTool", input:"Ingot" },
   { suffix:null, idFn:m=>`gtceu:anvil/${m.id}_wrench_tip`,      label:"Wrench Tip",      cat:"GT Tools", rules:["draw_last","hit_second_last","hit_third_last"], bonus:false, req:"anyTool", input:"Double Ingot" },
@@ -786,7 +788,54 @@ function applySeed() {
 // ============================================================
 //  TAB SWITCHING
 // ============================================================
+const CHANGELOG_ENTRIES = [
+  {
+    date: "2026-04-16",
+    version: "v1.3.0",
+    title: "Added Change Log tab",
+    summary: "Introduced an in-app Change Log tab to track updates in a consistent format.",
+    points: [
+      "Added a dedicated Change Log tab beside Anvil and Alloy calculators",
+      "Rendered versioned entries with date, summary, and detailed bullets",
+      "Added an agent-maintained format guide for future consistency",
+    ],
+  },
+  {
+    date: "2026-04-16",
+    version: "v1.2.1",
+    title: "Added RNR Mattock Head anvil recipes",
+    summary: "Restored missing mattock head recipes for all supported tool materials in the Anvil Calculator.",
+    points: [
+      "Added recipe IDs using rnr:anvil/<material>_mattock_head",
+      "Applied correct rules: punch_last, punch_not_last, bend_not_last",
+      "Scoped recipes to valid tool materials only",
+    ],
+  },
+];
+
 const STORAGE_TAB = "sts_tab";
+
+function renderChangeLog() {
+  const list = $("changelog-list");
+  if (!list) return;
+  list.innerHTML = "";
+
+  for (const entry of CHANGELOG_ENTRIES) {
+    const card = document.createElement("article");
+    card.className = "changelog-item";
+    const pointsHtml = entry.points.map(p => `<li>${p}</li>`).join("");
+    card.innerHTML = `
+      <div class="changelog-item-head">
+        <span class="changelog-date">${entry.date}</span>
+        <span class="changelog-version">${entry.version}</span>
+      </div>
+      <h3 class="changelog-title">${entry.title}</h3>
+      <p class="changelog-summary">${entry.summary}</p>
+      <ul class="changelog-points">${pointsHtml}</ul>
+    `;
+    list.appendChild(card);
+  }
+}
 
 function initTabs() {
   const bar = $("tab-bar");
@@ -826,6 +875,7 @@ function initTabs() {
 document.addEventListener("DOMContentLoaded", () => {
   loadPersisted();
   populateFilters();
+  renderChangeLog();
   initTabs();
 
   const savedSeed = loadSeed();

@@ -18,6 +18,7 @@
       <nav class="tab-bar" id="tab-bar">
         <button class="tab-btn active" data-tab="anvil">Anvil Calculator</button>
         <button class="tab-btn" data-tab="alloy">Alloy Calculator</button>
+        <button class="tab-btn" data-tab="changelog">Change Log</button>
         <div class="tab-indicator" id="tab-indicator"></div>
       </nav>
     </div>
@@ -118,13 +119,14 @@
             <div class="alloy-mode-toggle" id="alloy-mode-toggle">
               <button class="mode-btn active" data-mode="alloy">Alloy</button>
               <button class="mode-btn" data-mode="pure">Pure Metal</button>
+              <button class="mode-btn" data-mode="bloomery">Bloomery</button>
             </div>
             <div class="alloy-calc-toggle" id="alloy-calc-toggle">
               <button class="mode-btn active" data-calc="perfect">Perfect Recipe</button>
               <button class="mode-btn" data-calc="available">Use Available</button>
             </div>
           </div>
-          <div class="alloy-target-row">
+          <div class="alloy-target-row" id="alloy-target-row">
             <select id="alloy-target" class="alloy-select"></select>
             <label class="alloy-ingot-label">
               <input type="number" id="alloy-ingots" class="alloy-ingot-input" value="1" min="1" max="64">
@@ -132,7 +134,7 @@
             </label>
             <button id="alloy-calc-btn" class="btn btn-primary">Calculate</button>
           </div>
-          <div class="alloy-optimize-row">
+          <div class="alloy-optimize-row" id="alloy-optimize-row">
             <select id="opt-direction" class="alloy-opt-select">
               <option value="none">No Optimization</option>
               <option value="minimize">Minimize</option>
@@ -161,6 +163,19 @@
             <div class="alloy-breakdown" id="alloy-breakdown"></div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============== CHANGE LOG TAB =============== -->
+  <div id="tab-changelog" class="tab-content hidden">
+    <div class="changelog-page">
+      <div class="changelog-container">
+        <div class="changelog-header">
+          <h2>Change Log</h2>
+          <p>Recent updates to calculators, data, and UI behavior.</p>
+        </div>
+        <div id="changelog-list" class="changelog-list"></div>
       </div>
     </div>
   </div>

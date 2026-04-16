@@ -836,6 +836,105 @@ body {
   border-radius: 3px;
 }
 
+/* ---- Bloomery ---- */
+.bloomery-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+.bloomery-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.bloomery-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  min-width: 7rem;
+}
+.bloomery-size-toggle {
+  display: flex;
+  gap: 0.3rem;
+}
+.bloomery-info {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  padding: 0.6rem 0.8rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.bloomery-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+  margin-top: 0.3rem;
+}
+.bloomery-table th {
+  text-align: left;
+  padding: 0.45rem 0.6rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 2px solid var(--border);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.bloomery-table td {
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+.bloomery-table tbody tr:hover { background: var(--accent-glow); }
+.bloomery-best { background: rgba(99,102,241,0.06); }
+.bloomery-best .bl-blooms { color: var(--accent); font-weight: 700; }
+.bl-item-name { font-weight: 600; color: var(--text); }
+.bl-num { font-family: var(--mono); text-align: right; }
+.bl-blooms { font-weight: 600; }
+.bl-waste { font-family: var(--mono); font-size: 0.72rem; color: var(--text-muted); }
+.bloomery-summary {
+  font-size: 0.82rem;
+  padding: 0.7rem 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  line-height: 1.6;
+}
+.bl-highlight {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 1rem;
+}
+.bloomery-custom-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.5rem;
+}
+.bloomery-btn-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.3rem;
+}
+.bloomery-custom-result { margin-top: 0.8rem; }
+.bloomery-result-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.8rem 1rem;
+}
+.bl-result-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.3rem 0;
+  font-size: 0.82rem;
+  border-bottom: 1px solid var(--border);
+}
+.bl-result-row:last-child { border-bottom: none; }
+.bl-note { color: var(--text-muted); font-style: italic; }
+.bl-warn { color: #ef4444; font-size: 0.82rem; font-weight: 600; }
+
 /* ---- Alloy Score ---- */
 .alloy-score-row {
   display: flex;
@@ -985,6 +1084,82 @@ body {
   height: 100%;
   border-radius: 3px;
   transition: width 0.3s ease;
+}
+
+/* ============================================================
+   CHANGE LOG TAB
+   ============================================================ */
+.changelog-page {
+  flex: 1;
+  padding: 1.5rem 2rem;
+  overflow-y: auto;
+}
+.changelog-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+.changelog-header {
+  margin-bottom: 1rem;
+}
+.changelog-header h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.changelog-header p {
+  color: var(--text-muted);
+  margin-top: 0.3rem;
+  font-size: 0.85rem;
+}
+.changelog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+.changelog-item {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  box-shadow: var(--shadow);
+}
+.changelog-item-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.45rem;
+}
+.changelog-date {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+.changelog-version {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+.changelog-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.4rem;
+}
+.changelog-summary {
+  color: var(--text-muted);
+  font-size: 0.83rem;
+  margin-bottom: 0.55rem;
+}
+.changelog-points {
+  margin-left: 1rem;
+  color: var(--text);
+  font-size: 0.8rem;
+}
+.changelog-points li + li {
+  margin-top: 0.25rem;
 }
 
 /* ---- FOOTER ---- */

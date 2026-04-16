@@ -126,6 +126,68 @@ function getItemsForMetal(metalName) {
 }
 
 // ============================================================
+//  BLOOMERY DATA
+// ============================================================
+
+const IRON_ORES = [
+  { name: "Hematite",  pct: 90 },
+  { name: "Limonite",  pct: 90 },
+  { name: "Magnetite", pct: 90 },
+  { name: "Pyrite",    pct: 90 },
+  { name: "Goethite",  pct: 90 },
+];
+
+const BLOOMERY_ITEM_TYPES = [
+  { id: "ore_dust",    label: "Dust",        baseMb: 144, fn: "processed" },
+  { id: "centrifuged", label: "Centrifuged", baseMb: 110, fn: "processed" },
+  { id: "washed",      label: "Washed",      baseMb: 100, fn: "processed" },
+  { id: "crushed",     label: "Crushed",     baseMb: 80,  fn: "processed" },
+  { id: "rich_raw",    label: "Rich Raw",    baseMb: 48,  fn: "metal" },
+  { id: "small_dust",  label: "Small Dust",  baseMb: 36,  fn: "processed" },
+  { id: "normal_raw",  label: "Normal Raw",  baseMb: 36,  fn: "metal" },
+  { id: "poor_raw",    label: "Poor Raw",    baseMb: 24,  fn: "metal" },
+  { id: "small_ore",   label: "Small Ore",   baseMb: 16,  fn: "flat" },
+  { id: "tiny_dust",   label: "Tiny Dust",   baseMb: 16,  fn: "processed" },
+];
+
+const BLOOMERY_CAPACITY_PER_LAYER = 16;
+const BLOOMERY_MAX_LAYERS = 3;
+const BLOOMERY_MB_PER_BLOOM = 144;
+
+const BLOOMERY_ITEMS_RESOLVED = BLOOMERY_ITEM_TYPES.map(t => ({
+  ...t, mb: getOreItemMb(t, 90),
+}));
+
+function optimizeBloomery(capacity, mbPerItem) {
+  let best = null;
+  for (let ore = 1; ore < capacity; ore++) {
+    const coal = capacity - ore;
+    const mB = ore * mbPerItem;
+    const fromMb = Math.floor(mB / BLOOMERY_MB_PER_BLOOM);
+    const blooms = Math.min(coal, fromMb);
+    if (!best || blooms > best.blooms || (blooms === best.blooms && ore < best.oreCount)) {
+      const used = blooms * BLOOMERY_MB_PER_BLOOM;
+      best = { blooms, charcoal: blooms, oreCount: ore, totalMb: mB, mbUsed: used, waste: mB - used };
+    }
+  }
+  return best;
+}
+
+function solveBloomeryCustom(capacity, items) {
+  let totalMb = 0, totalOre = 0;
+  for (const it of items) {
+    totalMb += it.mb * it.qty;
+    totalOre += it.qty;
+  }
+  const charcoalSlots = capacity - totalOre;
+  if (charcoalSlots < 1 || totalOre < 1) return null;
+  const fromMb = Math.floor(totalMb / BLOOMERY_MB_PER_BLOOM);
+  const blooms = Math.min(charcoalSlots, fromMb);
+  const used = blooms * BLOOMERY_MB_PER_BLOOM;
+  return { blooms, charcoal: blooms, oreCount: totalOre, totalMb, mbUsed: used, waste: totalMb - used, slotsUsed: totalOre + blooms, capacity };
+}
+
+// ============================================================
 //  SOLVER ENGINE
 // ============================================================
 
@@ -473,10 +535,19 @@ function initAlloyUI() {
     btn.addEventListener("click", () => {
       alloyMode = btn.dataset.mode;
       $a("alloy-mode-toggle").querySelectorAll(".mode-btn").forEach(b => b.classList.toggle("active", b === btn));
-      populateAlloyTargets();
-      renderAlloyComponents();
-      populateOptTargets();
+      const isBloomery = alloyMode === "bloomery";
+      $a("alloy-calc-toggle").classList.toggle("hidden", isBloomery);
+      $a("alloy-target-row").classList.toggle("hidden", isBloomery);
+      $a("alloy-optimize-row").classList.toggle("hidden", isBloomery);
       $a("alloy-results").classList.add("hidden");
+      if (isBloomery) {
+        renderBloomeryUI();
+      } else {
+        populateAlloyTargets();
+        renderAlloyComponents();
+        populateOptTargets();
+        updateCompHeader();
+      }
     });
   });
 
@@ -570,6 +641,224 @@ function renderAlloyComponents() {
     }
   } else {
     container.appendChild(buildCompCard(selectedPureMetal, 1, 1, true));
+  }
+}
+
+// ============================================================
+//  BLOOMERY UI
+// ============================================================
+
+let bloomeryLayers = 3;
+let bloomeryCalcMode = "optimal";
+
+function renderBloomeryUI() {
+  const container = $a("alloy-components");
+  container.innerHTML = "";
+  $a("alloy-comp-header").textContent = "Raw Iron Bloom Calculator";
+  $a("alloy-results").classList.add("hidden");
+
+  const panel = document.createElement("div");
+  panel.className = "bloomery-panel";
+
+  // --- Size selector ---
+  const sizeRow = document.createElement("div");
+  sizeRow.className = "bloomery-row";
+  sizeRow.innerHTML = `<span class="bloomery-label">Bloomery Size</span>`;
+  const sizeToggle = document.createElement("div");
+  sizeToggle.className = "bloomery-size-toggle";
+  for (let l = 1; l <= BLOOMERY_MAX_LAYERS; l++) {
+    const cap = l * BLOOMERY_CAPACITY_PER_LAYER;
+    const btn = document.createElement("button");
+    btn.className = "mode-btn" + (l === bloomeryLayers ? " active" : "");
+    btn.textContent = `${l} Layer${l > 1 ? "s" : ""} (${cap})`;
+    btn.addEventListener("click", () => {
+      bloomeryLayers = l;
+      sizeToggle.querySelectorAll(".mode-btn").forEach(b => b.classList.toggle("active", b === btn));
+      updateBloomeryResults();
+    });
+    sizeToggle.appendChild(btn);
+  }
+  sizeRow.appendChild(sizeToggle);
+  panel.appendChild(sizeRow);
+
+  // --- Mode toggle ---
+  const modeRow = document.createElement("div");
+  modeRow.className = "bloomery-row";
+  modeRow.innerHTML = `<span class="bloomery-label">Mode</span>`;
+  const modeToggle = document.createElement("div");
+  modeToggle.className = "bloomery-size-toggle";
+  for (const [val, label] of [["optimal", "Optimal Fill"], ["custom", "Use Available"]]) {
+    const btn = document.createElement("button");
+    btn.className = "mode-btn" + (val === bloomeryCalcMode ? " active" : "");
+    btn.textContent = label;
+    btn.addEventListener("click", () => {
+      bloomeryCalcMode = val;
+      modeToggle.querySelectorAll(".mode-btn").forEach(b => b.classList.toggle("active", b === btn));
+      renderBloomeryBody(panel);
+    });
+    modeToggle.appendChild(btn);
+  }
+  modeRow.appendChild(modeToggle);
+  panel.appendChild(modeRow);
+
+  container.appendChild(panel);
+  renderBloomeryBody(panel);
+}
+
+function renderBloomeryBody(panel) {
+  let body = panel.querySelector(".bloomery-body");
+  if (body) body.remove();
+  body = document.createElement("div");
+  body.className = "bloomery-body";
+
+  if (bloomeryCalcMode === "optimal") {
+    renderBloomeryOptimal(body);
+  } else {
+    renderBloomeryCustom(body);
+  }
+  panel.appendChild(body);
+}
+
+function renderBloomeryOptimal(body) {
+  // Reference table header
+  const info = document.createElement("div");
+  info.className = "bloomery-info";
+  info.innerHTML = `All standard iron ores (${IRON_ORES.map(o => o.name).join(", ")}) yield <strong>90%</strong> iron.
+    <br>Each <strong>Raw Iron Bloom</strong> requires <strong>144 mB</strong> of iron + <strong>1 Charcoal</strong>.`;
+  body.appendChild(info);
+
+  const capacity = bloomeryLayers * BLOOMERY_CAPACITY_PER_LAYER;
+
+  // Table
+  const table = document.createElement("table");
+  table.className = "bloomery-table";
+  table.innerHTML = `<thead><tr>
+    <th>Item Type</th><th>mB / item</th><th>Ore Items</th><th>Charcoal</th><th>Blooms</th><th>Waste</th>
+  </tr></thead>`;
+  const tbody = document.createElement("tbody");
+
+  let bestBlooms = 0;
+  const rows = [];
+  for (const item of BLOOMERY_ITEMS_RESOLVED) {
+    const r = optimizeBloomery(capacity, item.mb);
+    if (r && r.blooms > bestBlooms) bestBlooms = r.blooms;
+    rows.push({ item, r });
+  }
+
+  for (const { item, r } of rows) {
+    if (!r) continue;
+    const tr = document.createElement("tr");
+    if (r.blooms === bestBlooms) tr.className = "bloomery-best";
+    const wastePct = r.totalMb > 0 ? ((r.waste / r.totalMb) * 100).toFixed(1) : "0.0";
+    tr.innerHTML = `
+      <td class="bl-item-name">${item.label}</td>
+      <td class="bl-num">${item.mb}</td>
+      <td class="bl-num">${r.oreCount}</td>
+      <td class="bl-num">${r.charcoal}</td>
+      <td class="bl-num bl-blooms">${r.blooms}</td>
+      <td class="bl-waste">${r.waste} mB (${wastePct}%)</td>`;
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+  body.appendChild(table);
+
+  const bestItem = rows.find(r => r.r && r.r.blooms === bestBlooms);
+  if (bestItem) {
+    const r = bestItem.r;
+    const summary = document.createElement("div");
+    summary.className = "bloomery-summary";
+    summary.innerHTML = `<strong>${bestItem.item.label}</strong> is optimal at <strong>${capacity}</strong> capacity &rarr;
+      <span class="bl-highlight">${r.blooms} Raw Iron Blooms</span>
+      (${r.oreCount} ore + ${r.charcoal} charcoal = ${r.oreCount + r.charcoal} items, ${r.waste} mB waste)`;
+    body.appendChild(summary);
+  }
+}
+
+function renderBloomeryCustom(body) {
+  const info = document.createElement("div");
+  info.className = "bloomery-info";
+  info.innerHTML = `Enter the quantities of each iron ore item type you have available.
+    <br>All standard iron ores at <strong>90%</strong> purity share the same mB values.`;
+  body.appendChild(info);
+
+  const grid = document.createElement("div");
+  grid.className = "bloomery-custom-grid";
+
+  for (const item of BLOOMERY_ITEMS_RESOLVED) {
+    const row = document.createElement("div");
+    row.className = "comp-item";
+    row.innerHTML = `
+      <span class="comp-item-label">${item.label}</span>
+      <span class="comp-item-mb">${item.mb}mb</span>
+      <input type="number" min="0" max="999" value="0"
+             class="bloomery-input" data-id="${item.id}" data-mb="${item.mb}">
+    `;
+    grid.appendChild(row);
+  }
+  body.appendChild(grid);
+
+  const btnRow = document.createElement("div");
+  btnRow.className = "bloomery-btn-row";
+  const btn = document.createElement("button");
+  btn.className = "btn btn-primary";
+  btn.textContent = "Calculate";
+  btn.addEventListener("click", () => runBloomeryCustomCalc(body));
+  btnRow.appendChild(btn);
+  body.appendChild(btnRow);
+}
+
+function runBloomeryCustomCalc(body) {
+  const capacity = bloomeryLayers * BLOOMERY_CAPACITY_PER_LAYER;
+  const items = [];
+  body.querySelectorAll(".bloomery-input").forEach(inp => {
+    const qty = parseInt(inp.value, 10) || 0;
+    if (qty > 0) items.push({ id: inp.dataset.id, mb: parseInt(inp.dataset.mb, 10), qty });
+  });
+
+  let resultEl = body.querySelector(".bloomery-custom-result");
+  if (!resultEl) {
+    resultEl = document.createElement("div");
+    resultEl.className = "bloomery-custom-result";
+    body.appendChild(resultEl);
+  }
+
+  if (items.length === 0) {
+    resultEl.innerHTML = `<span class="bl-warn">Enter at least one ore item.</span>`;
+    return;
+  }
+
+  const totalOre = items.reduce((s, i) => s + i.qty, 0);
+  if (totalOre >= capacity) {
+    resultEl.innerHTML = `<span class="bl-warn">Too many ore items (${totalOre}) for capacity (${capacity}). Leave room for charcoal.</span>`;
+    return;
+  }
+
+  const r = solveBloomeryCustom(capacity, items);
+  if (!r || r.blooms === 0) {
+    resultEl.innerHTML = `<span class="bl-warn">Not enough iron mB for a single bloom (need 144 mB).</span>`;
+    return;
+  }
+
+  const wastePct = r.totalMb > 0 ? ((r.waste / r.totalMb) * 100).toFixed(1) : "0.0";
+  const unusedSlots = capacity - r.slotsUsed;
+  resultEl.innerHTML = `
+    <div class="bloomery-result-card">
+      <div class="bl-result-row"><span>Raw Iron Blooms</span><strong class="bl-highlight">${r.blooms}</strong></div>
+      <div class="bl-result-row"><span>Charcoal Needed</span><strong>${r.charcoal}</strong></div>
+      <div class="bl-result-row"><span>Ore Items Used</span><strong>${r.oreCount}</strong></div>
+      <div class="bl-result-row"><span>Total Iron mB</span><strong>${r.totalMb}</strong></div>
+      <div class="bl-result-row"><span>Iron mB Used</span><strong>${r.mbUsed}</strong></div>
+      <div class="bl-result-row"><span>Waste</span><strong>${r.waste} mB (${wastePct}%)</strong></div>
+      <div class="bl-result-row"><span>Slots Used</span><strong>${r.slotsUsed} / ${capacity}</strong></div>
+      ${unusedSlots > 0 ? `<div class="bl-result-row bl-note"><span>Unused Slots</span><strong>${unusedSlots}</strong></div>` : ""}
+    </div>
+  `;
+}
+
+function updateBloomeryResults() {
+  if (bloomeryCalcMode === "optimal") {
+    const panel = $a("alloy-components").querySelector(".bloomery-panel");
+    if (panel) renderBloomeryBody(panel);
   }
 }
 
